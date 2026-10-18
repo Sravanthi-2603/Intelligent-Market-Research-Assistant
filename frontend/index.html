@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IntelliMarket — Intelligent Market Research Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* ─── CSS RESET & VARIABLES ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #1f6feb;
+      --accent2: #388bfd;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #a371f7;
+      --cyan: #39d353;
+      --orange: #f0883e;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ─── HEADER ─── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .ibm-badge {
+      font-size: 11px;
+      background: var(--accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ─── LAYOUT ─── */
+    .app-layout {
+      display: flex;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px 0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section {
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 8px 12px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+      margin: 1px 0;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(31,111,235,0.15); color: var(--accent2); }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 15px; }
+
+    .topic-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      margin: 2px;
+      transition: all 0.15s;
+    }
+    .topic-pill:hover, .topic-pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* ─── VIEWS ─── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    /* ─── SEARCH BAR ─── */
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* ─── GRID LAYOUTS ─── */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 16px 20px;
+    }
+
+    /* ─── KPI CARDS ─── */
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .kpi-card.blue::before { background: var(--accent); }
+    .kpi-card.green::before { background: var(--green); }
+    .kpi-card.purple::before { background: var(--purple); }
+    .kpi-card.orange::before { background: var(--orange); }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .kpi-change {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-change.up { color: var(--green); }
+    .kpi-change.down { color: var(--red); }
+    .kpi-change.flat { color: var(--muted); }
+
+    /* ─── CHART CONTAINERS ─── */
+    .chart-container {
+      position: relative;
+      padding: 16px 20px;
+    }
+
+    .chart-container canvas {
+      max-height: 260px;
+    }
+
+    /* ─── SENTIMENT BADGE ─── */
+    .sentiment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .sentiment-badge.POSITIVE { background: rgba(63,185,80,0.15); color: var(--green); }
+    .sentiment-badge.NEGATIVE { background: rgba(248,81,73,0.15); color: var(--red); }
+    .sentiment-badge.NEUTRAL { background: rgba(139,148,158,0.15); color: var(--muted); }
+
+    /* ─── ALERT CARDS ─── */
+    .alert-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid;
+    }
+
+    .alert-item.HIGH { border-color: var(--red); background: rgba(248,81,73,0.08); }
+    .alert-item.MEDIUM { border-color: var(--yellow); background: rgba(210,153,34,0.08); }
+    .alert-item.LOW { border-color: var(--green); background: rgba(63,185,80,0.08); }
+
+    .alert-severity {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      height: fit-content;
+      white-space: nowrap;
+    }
+
+    .alert-item.HIGH .alert-severity { background: var(--red); color: white; }
+    .alert-item.MEDIUM .alert-severity { background: var(--yellow); color: white; }
+    .alert-item.LOW .alert-severity { background: var(--green); color: white; }
+
+    .alert-content { flex: 1; }
+    .alert-message { font-size: 13px; color: var(--text); font-weight: 500; }
+    .alert-action { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .alert-date { font-size: 11px; color: var(--muted); }
+
+    /* ─── NEWS ITEMS ─── */
+    .news-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 14px;
+    }
+
+    .news-item:last-child { border-bottom: none; }
+
+    .news-content { flex: 1; min-width: 0; }
+    .news-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .news-source {
+      font-weight: 600;
+      color: var(--accent2);
+    }
+
+    /* ─── AI ANALYSIS PANEL ─── */
+    .ai-response {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .ai-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .granite-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent2);
+    }
+
+    .granite-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .ai-content {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text);
+    }
+
+    .ai-content h1, .ai-content h2, .ai-content h3 {
+      color: var(--accent2);
+      margin: 14px 0 6px;
+      font-size: 14px;
+    }
+
+    .ai-content ul, .ai-content ol {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+
+    .ai-content li { margin: 4px 0; }
+
+    .ai-content strong { color: var(--text); }
+
+    /* ─── LOADING SPINNER ─── */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── HEALTH SCORE ─── */
+    .health-score-ring {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 12px;
+    }
+
+    .health-score-ring svg { transform: rotate(-90deg); }
+
+    /* ─── COMPETITOR TABLE ─── */
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .comp-table th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comp-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      overflow: hidden;
+      width: 120px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 3px;
+      transition: width 1s ease;
+    }
+
+    /* ─── TREND INDICATOR ─── */
+    .trend-up { color: var(--green); }
+    .trend-down { color: var(--red); }
+    .trend-flat { color: var(--muted); }
+
+    /* ─── UPLOAD AREA ─── */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: var(--accent);
+      background: rgba(31,111,235,0.05);
+      color: var(--text);
+    }
+
+    .upload-area .upload-icon { font-size: 36px; margin-bottom: 10px; }
+    .upload-area input[type="file"] { display: none; }
+
+    /* ─── TABS ─── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      background: var(--surface2);
+      padding: 4px;
+      border-radius: var(--radius);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 7px 16px;
+      border: none;
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active { background: var(--accent); color: white; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1200px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .grid-4 { grid-template-columns: 1fr; }
+      .main-content { padding: 16px; }
+    }
+
+    /* ─── TOPIC SELECTOR ─── */
+    .topic-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .topic-bar-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* ─── SNAPSHOT CARD ─── */
+    .snapshot-text {
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: var(--text);
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    /* ─── NOTIFICATION BADGE ─── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: var(--red);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 50%;
+    }
+
+    /* ─── FOOTER ─── */
+    .page-footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">IM</div>
+    IntelliMarket
+    <span class="ibm-badge">IBM Granite</span>
+  </a>
+  <div class="header-actions">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-label" id="statusLabel">Connecting...</span>
+  </div>
+</header>
+
+<!-- ─── APP LAYOUT ─── -->
+<div class="app-layout">
+
+  <!-- ─── SIDEBAR ─── -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <div class="sidebar-section">
+      <button class="nav-item active" onclick="showView('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showView('analyze')">
+        <span class="nav-icon">🔍</span> AI Analysis
+      </button>
+      <button class="nav-item" onclick="showView('competitors')">
+        <span class="nav-icon">⚔️</span> Competitors
+      </button>
+      <button class="nav-item" onclick="showView('forecast')">
+        <span class="nav-icon">📈</span> Forecast
+      </button>
+      <button class="nav-item" onclick="showView('sentiment')">
+        <span class="nav-icon">💬</span> Sentiment
+      </button>
+      <button class="nav-item" onclick="showView('news')">
+        <span class="nav-icon">📰</span> News Feed
+      </button>
+      <button class="nav-item" onclick="showView('multimodal')">
+        <span class="nav-icon">📎</span> Multimodal
+      </button>
+      <button class="nav-item" onclick="showView('alerts')">
+        <span class="nav-icon">🔔</span> Alerts
+        <span class="badge" id="alertBadge">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-label">Quick Topics</div>
+    <div class="sidebar-section">
+      <div id="sidebarTopics"></div>
+    </div>
+  </nav>
+
+  <!-- ─── MAIN CONTENT ─── -->
+  <main class="main-content">
+
+    <!-- ══════════════════════════════════════════════════════
+         DASHBOARD VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div class="page-title">Market Dashboard</div>
+        <div class="page-subtitle">Real-time market intelligence powered by IBM Granite AI</div>
+      </div>
+
+      <div class="topic-bar">
+        <span class="topic-bar-label">Industry:</span>
+        <span id="dashTopicPills"></span>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid-4" id="kpiRow">
+        <div class="kpi-card blue">
+          <div class="kpi-label">Market Size</div>
+          <div class="kpi-value" id="kpiMarketSize">—</div>
+          <div class="kpi-change flat" id="kpiMarketSizeNote">Loading...</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">YoY Growth</div>
+          <div class="kpi-value" id="kpiGrowth">—</div>
+          <div class="kpi-change" id="kpiGrowthNote">Loading...</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-label">Demand Index</div>
+          <div class="kpi-value" id="kpiDemand">—</div>
+          <div class="kpi-change flat" id="kpiDemandNote">0-100 Scale</div>
+        </div>
+        <div class="kpi-card orange">
+          <div class="kpi-label">Market Health</div>
+          <div class="kpi-value" id="kpiHealth">—</div>
+          <div class="kpi-change" id="kpiHealthNote">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Revenue Trend & Forecast</div>
+            <span class="muted" style="font-size:11px;color:var(--muted)">12mo + 6mo forecast</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="revenueTrendChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🥧 Market Share</div>
+            <span style="font-size:11px;color:var(--muted)">Top competitors</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="marketShareChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sentiment + Alerts Row -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💬 Sentiment Timeline</div>
+            <span style="font-size:11px;color:var(--muted)">30 days</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="sentimentChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔔 Active Alerts</div>
+            <button class="btn btn-secondary btn-sm" onclick="showView('alerts')">View All</button>
+          </div>
+          <div class="card-body" id="dashAlerts">
+            <div class="loading"><div class="spinner"></div>Loading alerts...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Snapshot + News -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🤖 AI Market Snapshot</div>
+            <span class="granite-badge">IBM Granite</span>
+          </div>
+          <div class="card-body">
+            <div id="dashSnapshot" class="snapshot-text">
+              <div class="loading"><div class="spinner"></div>Generating AI snapshot...</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📰 Latest News</div>
+            <button class="btn btn-secondary btn-sm" onclick="showView('news')">All News</button>
+          </div>
+          <div id="dashNews">
+            <div class="loading"><div class="spinner"></div>Fetching news...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">Powered by IBM Granite (granite-3-8b-instruct) · IBM WatsonX · IntelliMarket v1.0</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         AI ANALYSIS VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-analyze">
+      <div class="page-header">
+        <div class="page-title">🔍 AI Market Analysis</div>
+        <div class="page-subtitle">Ask IBM Granite anything about market trends, strategies, or industry dynamics</div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" class="search-input" id="analyzeInput"
+          placeholder="e.g. What are the key trends in the electric vehicle market in 2024?"
+          onkeydown="if(event.key==='Enter') runAnalysis()" />
+        <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()">
+          🤖 Analyze
+        </button>
+      </div>
+
+      <!-- Quick prompts -->
+      <div style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:var(--muted);align-self:center">Quick prompts:</span>
+        <button class="topic-pill" onclick="setQuery('What are the emerging trends in AI/ML market for 2025?')">AI trends 2025</button>
+        <button class="topic-pill" onclick="setQuery('Analyze the competitive landscape in the cloud computing sector')">Cloud competition</button>
+        <button class="topic-pill" onclick="setQuery('What factors are driving growth in the fintech industry?')">Fintech growth drivers</button>
+        <button class="topic-pill" onclick="setQuery('What are the biggest risks in the EV market?')">EV market risks</button>
+        <button class="topic-pill" onclick="setQuery('How is consumer sentiment changing in healthcare?')">Healthcare sentiment</button>
+      </div>
+
+      <div id="analyzeResult"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         COMPETITORS VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-competitors">
+      <div class="page-header">
+        <div class="page-title">⚔️ Competitor Analysis</div>
+        <div class="page-subtitle">Map the competitive landscape and identify strategic opportunities</div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-title">Configure Analysis</div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Your Company</label>
+              <input type="text" class="search-input" id="companyInput" placeholder="e.g. Tesla, OpenAI, Stripe..." />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Competitors (comma-separated)</label>
+              <input type="text" class="search-input" id="competitorsInput" placeholder="e.g. Ford, GM, Rivian..." />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="runCompetitorAnalysis()">⚔️ Analyze Competitors</button>
+        </div>
+      </div>
+
+      <div id="competitorResult"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         FORECAST VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-forecast">
+      <div class="page-header">
+        <div class="page-title">📈 Market Forecast</div>
+        <div class="page-subtitle">Predictive analytics and demand forecasting powered by ML + IBM Granite</div>
+      </div>
+
+      <div class="search-bar">
+        <select class="search-input" id="forecastIndustry" style="max-width:220px;">
+          <option>AI</option>
+          <option>EV</option>
+          <option>Healthcare</option>
+          <option>Fintech</option>
+          <option>E-commerce</option>
+          <option>Cloud</option>
+          <option>Cybersecurity</option>
+        </select>
+        <select class="search-input" id="forecastTimeframe" style="max-width:180px;">
+          <option>3 months</option>
+          <option selected>6 months</option>
+          <option>12 months</option>
+        </select>
+        <button class="btn btn-primary" onclick="runForecast()">📈 Forecast</button>
+      </div>
+
+      <div id="forecastResult"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SENTIMENT VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-sentiment">
+      <div class="page-header">
+        <div class="page-title">💬 Sentiment Analysis</div>
+        <div class="page-subtitle">Analyze customer and market sentiment using IBM Granite AI</div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-body">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Text to Analyze</label>
+          <textarea class="search-input" id="sentimentText" rows="5"
+            style="resize:vertical;width:100%"
+            placeholder="Paste customer reviews, news text, social media posts, or any market-related text..."></textarea>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+            <input type="text" class="search-input" id="sentimentEntity" placeholder="Entity (e.g. Apple, EV market)" style="max-width:250px;" />
+            <button class="btn btn-primary" onclick="runSentiment()">💬 Analyze Sentiment</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sentimentResult"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         NEWS VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-news">
+      <div class="page-header">
+        <div class="page-title">📰 Market News Feed</div>
+        <div class="page-subtitle">Real-time news aggregation from top financial and tech sources</div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" class="search-input" id="newsKeyword"
+          placeholder="Search news by keyword (AI, EV, fintech...)"
+          onkeydown="if(event.key==='Enter') fetchNews()" />
+        <select class="search-input" id="newsTopic" style="max-width:180px;">
+          <option value="technology">Technology</option>
+          <option value="finance">Finance</option>
+          <option value="general">General</option>
+        </select>
+        <button class="btn btn-primary" onclick="fetchNews()">🔍 Search</button>
+      </div>
+
+      <div id="newsResult">
+        <div class="loading"><div class="spinner"></div>Fetching latest news...</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         MULTIMODAL VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-multimodal">
+      <div class="page-header">
+        <div class="page-title">📎 Multimodal Input</div>
+        <div class="page-subtitle">Upload market reports, CSVs, or text files for AI-powered analysis</div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(this,'tab-text')">📝 Text Query</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-upload')">📄 File Upload</button>
+      </div>
+
+      <div id="tab-text">
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Market Research Query</label>
+            <textarea class="search-input" id="multimodalText" rows="4"
+              style="resize:vertical;width:100%;margin-bottom:12px"
+              placeholder="Describe what market analysis you need..."></textarea>
+            <div style="display:flex;gap:10px;">
+              <select class="search-input" id="multimodalType" style="max-width:180px;">
+                <option value="general">General Analysis</option>
+                <option value="sentiment">Sentiment Analysis</option>
+              </select>
+              <button class="btn btn-primary" onclick="runMultimodal()">🤖 Run Analysis</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-upload" style="display:none;">
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleFileDrop(event)">
+          <div class="upload-icon">📁</div>
+          <p style="font-weight:600;margin-bottom:6px;">Drop your file here or click to browse</p>
+          <p style="font-size:12px;">Supported: .txt, .csv, .md, .json</p>
+          <input type="file" id="fileInput" accept=".txt,.csv,.md,.json"
+            onchange="handleFileSelect(event)" />
+        </div>
+        <div id="filePreview" style="margin-top:12px;display:none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" id="fileName">File loaded</div>
+              <button class="btn btn-secondary btn-sm" onclick="clearFile()">✕ Clear</button>
+            </div>
+            <div class="card-body">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Optional: Add your question about this file</label>
+              <input type="text" class="search-input" id="fileQuery"
+                placeholder="e.g. What are the key trends in this data?" />
+              <button class="btn btn-primary" style="margin-top:12px;" onclick="runFileAnalysis()">🤖 Analyze File</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="multimodalResult"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         ALERTS VIEW
+    ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-alerts">
+      <div class="page-header">
+        <div class="page-title">🔔 Market Alerts</div>
+        <div class="page-subtitle">Automated alerts on sentiment shifts, competitor moves, and market opportunities</div>
+      </div>
+
+      <div id="alertsResult">
+        <div class="loading"><div class="spinner"></div>Loading alerts...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── JAVASCRIPT ─── -->
+<script>
+/* ═══════════════════════════════════════════════════════════
+   STATE & CONSTANTS
+═══════════════════════════════════════════════════════════ */
+const API_BASE = "/api";
+const TOPICS = ["AI", "EV", "Healthcare", "Fintech", "Cloud", "E-commerce", "Cybersecurity"];
+let currentTopic = "AI";
+let charts = {};
+let fileContent = "";
+let allAlerts = [];
+
+/* ═══════════════════════════════════════════════════════════
+   INITIALIZATION
+═══════════════════════════════════════════════════════════ */
+document.addEventListener("DOMContentLoaded", () => {
+  renderTopicPills();
+  checkApiHealth();
+  loadDashboard(currentTopic);
+  fetchNews();
+});
+
+function renderTopicPills() {
+  // Dashboard topic pills
+  const dashPills = document.getElementById("dashTopicPills");
+  dashPills.innerHTML = TOPICS.map(t =>
+    `<span class="topic-pill ${t === currentTopic ? 'active' : ''}"
+      onclick="changeTopic('${t}', this)">${t}</span>`
+  ).join("");
+
+  // Sidebar quick topics
+  const sidebarTopics = document.getElementById("sidebarTopics");
+  sidebarTopics.innerHTML = TOPICS.map(t =>
+    `<span class="topic-pill"
+      onclick="changeTopic('${t}', null);showView('dashboard')">${t}</span>`
+  ).join("");
+}
+
+function changeTopic(topic, el) {
+  currentTopic = topic;
+  document.querySelectorAll("#dashTopicPills .topic-pill").forEach(p => p.classList.remove("active"));
+  if (el) el.classList.add("active");
+  loadDashboard(topic);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   API HEALTH CHECK
+═══════════════════════════════════════════════════════════ */
+async function checkApiHealth() {
+  try {
+    const r = await fetch(`${API_BASE}/health`);
+    if (r.ok) {
+      document.getElementById("statusDot").style.background = "var(--green)";
+      document.getElementById("statusLabel").textContent = "IBM Granite Connected";
+    }
+  } catch {
+    document.getElementById("statusDot").style.background = "var(--red)";
+    document.getElementById("statusLabel").textContent = "Offline";
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+function showView(viewId) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById(`view-${viewId}`).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n => {
+    if (n.getAttribute("onclick") && n.getAttribute("onclick").includes(viewId))
+      n.classList.add("active");
+  });
+
+  // Lazy load content for views
+  if (viewId === "news") fetchNews();
+  if (viewId === "alerts") loadAlerts();
+  if (viewId === "forecast") runForecast();
+}
+
+function switchTab(btn, tabId) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  ["tab-text", "tab-upload"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === tabId ? "block" : "none";
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════════════════ */
+async function loadDashboard(topic) {
+  try {
+    const r = await fetch(`${API_BASE}/dashboard?topic=${encodeURIComponent(topic)}`);
+    const data = await r.json();
+
+    updateKPIs(data.indicators, data.market_health);
+    renderRevenueForecastChart(data.indicators, data.demand_forecast);
+    renderMarketShareChart(data.indicators.competitor_shares);
+    renderSentimentTimelineChart(data.sentiment_timeline);
+    renderDashAlerts(data.alerts);
+    renderDashSnapshot(data.market_snapshot);
+    renderDashNews(data.recent_news);
+
+    allAlerts = data.alerts || [];
+    document.getElementById("alertBadge").textContent =
+      allAlerts.filter(a => a.severity === "HIGH").length || 0;
+  } catch (e) {
+    console.error("Dashboard error:", e);
+    document.getElementById("dashSnapshot").innerHTML =
+      `<div style="color:var(--red)">⚠️ Failed to load dashboard data. Please check the server.</div>`;
+  }
+}
+
+function updateKPIs(indicators, health) {
+  if (!indicators) return;
+
+  document.getElementById("kpiMarketSize").textContent = `$${indicators.market_size_usd_bn}B`;
+  document.getElementById("kpiMarketSizeNote").textContent = `${currentTopic} Market`;
+
+  const growth = indicators.yoy_growth_pct;
+  document.getElementById("kpiGrowth").textContent = `${growth}%`;
+  const growthNote = document.getElementById("kpiGrowthNote");
+  growthNote.textContent = `Year-over-Year`;
+  growthNote.className = `kpi-change ${growth > 0 ? "up" : "down"}`;
+
+  document.getElementById("kpiDemand").textContent = indicators.demand_index?.toFixed(0) || "—";
+
+  if (health) {
+    document.getElementById("kpiHealth").textContent = `${health.composite_score}`;
+    const healthNote = document.getElementById("kpiHealthNote");
+    healthNote.textContent = health.label;
+    healthNote.className = `kpi-change ${health.composite_score >= 60 ? "up" : health.composite_score >= 40 ? "flat" : "down"}`;
+  }
+}
+
+function renderRevenueForecastChart(indicators, forecast) {
+  const ctx = document.getElementById("revenueTrendChart").getContext("2d");
+  if (charts.revenue) charts.revenue.destroy();
+
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fcastMonths = ["F+1","F+2","F+3","F+4","F+5","F+6"];
+  const labels = [...months, ...fcastMonths.slice(0, forecast?.forecast_months || 6)];
+
+  const historical = indicators.monthly_revenue_trend || [];
+  const forecastData = forecast?.forecast || [];
+
+  charts.revenue = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Historical",
+          data: [...historical, ...Array(forecastData.length).fill(null)],
+          borderColor: "#1f6feb",
+          backgroundColor: "rgba(31,111,235,0.1)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3
+        },
+        {
+          label: "Forecast",
+          data: [...Array(historical.length - 1).fill(null), historical[historical.length-1], ...forecastData],
+          borderColor: "#a371f7",
+          backgroundColor: "rgba(163,113,247,0.1)",
+          borderDash: [6, 3],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: "#8b949e", font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: "#8b949e", font: { size: 10 } }, grid: { color: "#21262d" } },
+        y: { ticks: { color: "#8b949e", font: { size: 10 } }, grid: { color: "#21262d" } }
+      }
+    }
+  });
+}
+
+function renderMarketShareChart(shares) {
+  const ctx = document.getElementById("marketShareChart").getContext("2d");
+  if (charts.share) charts.share.destroy();
+
+  if (!shares || !shares.length) return;
+
+  const colors = ["#1f6feb","#a371f7","#3fb950","#f0883e","#d29922","#39d353","#f85149"];
+
+  charts.share = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: shares.map(s => s.company),
+      datasets: [{
+        data: shares.map(s => s.share_pct),
+        backgroundColor: colors.slice(0, shares.length),
+        borderColor: "#161b22",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: "#8b949e", font: { size: 11 }, padding: 10 } }
+      }
+    }
+  });
+}
+
+function renderSentimentTimelineChart(timeline) {
+  const ctx = document.getElementById("sentimentChart").getContext("2d");
+  if (charts.sentiment) charts.sentiment.destroy();
+
+  if (!timeline || !timeline.length) return;
+
+  const labels = timeline.filter((_, i) => i % 3 === 0).map(d => d.date.slice(5));
+  const scores = timeline.filter((_, i) => i % 3 === 0).map(d => d.sentiment_score);
+  const colors = scores.map(s => s > 0.1 ? "rgba(63,185,80,0.8)" : s < -0.1 ? "rgba(248,81,73,0.8)" : "rgba(139,148,158,0.8)");
+
+  charts.sentiment = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Sentiment Score",
+        data: scores,
+        backgroundColor: colors,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#8b949e", font: { size: 9 } }, grid: { color: "#21262d" } },
+        y: {
+          min: -1, max: 1,
+          ticks: { color: "#8b949e", font: { size: 10 } },
+          grid: { color: "#21262d" }
+        }
+      }
+    }
+  });
+}
+
+function renderDashAlerts(alerts) {
+  const el = document.getElementById("dashAlerts");
+  if (!alerts || !alerts.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><p>No active alerts</p></div>`;
+    return;
+  }
+  el.innerHTML = alerts.slice(0, 4).map(a => alertHTML(a)).join("");
+}
+
+function renderDashSnapshot(snapshot) {
+  const el = document.getElementById("dashSnapshot");
+  if (!snapshot) return;
+  const text = snapshot.snapshot || snapshot.analysis || "No snapshot available.";
+  el.innerHTML = marked.parse ? marked.parse(text) : text.replace(/\n/g, "<br>");
+}
+
+function renderDashNews(news) {
+  const el = document.getElementById("dashNews");
+  if (!news || !news.length) {
+    el.innerHTML = `<div class="empty-state"><p>No news available</p></div>`;
+    return;
+  }
+  el.innerHTML = news.slice(0, 5).map(n => newsItemHTML(n)).join("");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AI ANALYSIS
+═══════════════════════════════════════════════════════════ */
+async function runAnalysis() {
+  const query = document.getElementById("analyzeInput").value.trim();
+  if (!query) return;
+
+  const resultEl = document.getElementById("analyzeResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>IBM Granite is analyzing your query...</div>`;
+
+  const btn = document.getElementById("analyzeBtn");
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API_BASE}/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+    const data = await r.json();
+
+    resultEl.innerHTML = `
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="granite-badge">IBM Granite Analysis</div>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">${data.model}</span>
+        </div>
+        <div class="ai-content">${marked.parse ? marked.parse(data.analysis) : data.analysis.replace(/\n/g,"<br>")}</div>
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Analysis failed: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function setQuery(q) {
+  document.getElementById("analyzeInput").value = q;
+  document.getElementById("analyzeInput").focus();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPETITOR ANALYSIS
+═══════════════════════════════════════════════════════════ */
+async function runCompetitorAnalysis() {
+  const company = document.getElementById("companyInput").value.trim();
+  const competitorsRaw = document.getElementById("competitorsInput").value.trim();
+  if (!company) { alert("Please enter a company name."); return; }
+
+  const competitors = competitorsRaw ? competitorsRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+  const resultEl = document.getElementById("competitorResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Analyzing competitive landscape...</div>`;
+
+  try {
+    const r = await fetch(`${API_BASE}/competitors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company, competitors })
+    });
+    const data = await r.json();
+
+    let alertsHtml = "";
+    if (data.alerts && data.alerts.length) {
+      alertsHtml = `
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header"><div class="card-title">🔔 Competitor Alerts</div></div>
+          <div class="card-body">${data.alerts.map(a => alertHTML(a)).join("")}</div>
+        </div>`;
+    }
+
+    resultEl.innerHTML = `
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="granite-badge">Competitive Intelligence — ${data.company}</div>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">${data.model}</span>
+        </div>
+        <div class="ai-content">${marked.parse ? marked.parse(data.analysis) : data.analysis.replace(/\n/g,"<br>")}</div>
+      </div>
+      ${alertsHtml}`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Analysis failed: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FORECAST
+═══════════════════════════════════════════════════════════ */
+async function runForecast() {
+  const industry = document.getElementById("forecastIndustry")?.value || "AI";
+  const timeframe = document.getElementById("forecastTimeframe")?.value || "6 months";
+  const resultEl = document.getElementById("forecastResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Generating market forecast...</div>`;
+
+  try {
+    const r = await fetch(`${API_BASE}/forecast?industry=${encodeURIComponent(industry)}&timeframe=${encodeURIComponent(timeframe)}`);
+    const data = await r.json();
+
+    const health = data.market_health;
+    const forecast = data.demand_forecast;
+    const ind = data.indicators;
+
+    const trendIcon = forecast.trend === "INCREASING" ? "📈" : forecast.trend === "DECREASING" ? "📉" : "➡️";
+    const trendClass = forecast.trend === "INCREASING" ? "trend-up" : forecast.trend === "DECREASING" ? "trend-down" : "trend-flat";
+
+    // Render forecast chart
+    setTimeout(() => renderForecastChart(data), 100);
+
+    let alertsHtml = data.strategic_alerts?.length
+      ? `<div class="card" style="margin-top:16px;">
+          <div class="card-header"><div class="card-title">🔔 Strategic Alerts</div></div>
+          <div class="card-body">${data.strategic_alerts.map(a => alertHTML(a)).join("")}</div>
+        </div>` : "";
+
+    resultEl.innerHTML = `
+      <div class="grid-4" style="margin-bottom:20px;">
+        <div class="kpi-card blue">
+          <div class="kpi-label">Market Size</div>
+          <div class="kpi-value">$${ind.market_size_usd_bn}B</div>
+          <div class="kpi-change flat">${industry}</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">Demand Trend</div>
+          <div class="kpi-value ${trendClass}">${trendIcon}</div>
+          <div class="kpi-change flat">${forecast.trend}</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-label">Health Score</div>
+          <div class="kpi-value">${health?.composite_score}</div>
+          <div class="kpi-change flat">${health?.label}</div>
+        </div>
+        <div class="kpi-card orange">
+          <div class="kpi-label">Confidence</div>
+          <div class="kpi-value">${forecast.confidence}</div>
+          <div class="kpi-change flat">R²: ${forecast.r_squared}</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📊 Demand Forecast Chart</div></div>
+          <div class="chart-container"><canvas id="forecastChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🤖 IBM Granite Narrative Forecast</div><span class="granite-badge">IBM Granite</span></div>
+          <div class="card-body" style="max-height:290px;overflow-y:auto;">
+            <div class="ai-content">${marked.parse ? marked.parse(data.granite_forecast.forecast) : data.granite_forecast.forecast.replace(/\n/g,"<br>")}</div>
+          </div>
+        </div>
+      </div>
+      ${alertsHtml}`;
+
+    setTimeout(() => renderForecastChart(data), 200);
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Forecast failed: ${e.message}</div>`;
+  }
+}
+
+function renderForecastChart(data) {
+  const canvas = document.getElementById("forecastChart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (charts.forecast) charts.forecast.destroy();
+
+  const hist = data.demand_forecast?.historical || [];
+  const fore = data.demand_forecast?.forecast || [];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fcastLabels = Array.from({length: fore.length}, (_, i) => `F+${i+1}`);
+  const labels = [...months.slice(0, hist.length), ...fcastLabels];
+
+  charts.forecast = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Historical",
+          data: [...hist, ...Array(fore.length).fill(null)],
+          borderColor: "#3fb950",
+          backgroundColor: "rgba(63,185,80,0.1)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3
+        },
+        {
+          label: "Forecast",
+          data: [...Array(hist.length - 1).fill(null), hist[hist.length - 1], ...fore],
+          borderColor: "#f0883e",
+          borderDash: [5, 3],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: "#8b949e", font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: "#8b949e", font: { size: 10 } }, grid: { color: "#21262d" } },
+        y: { ticks: { color: "#8b949e", font: { size: 10 } }, grid: { color: "#21262d" } }
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SENTIMENT ANALYSIS
+═══════════════════════════════════════════════════════════ */
+async function runSentiment() {
+  const text = document.getElementById("sentimentText").value.trim();
+  const entity = document.getElementById("sentimentEntity").value.trim() || "market";
+  if (!text) { alert("Please enter text to analyze."); return; }
+
+  const resultEl = document.getElementById("sentimentResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Running sentiment analysis...</div>`;
+
+  try {
+    const r = await fetch(`${API_BASE}/sentiment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, entity })
+    });
+    const data = await r.json();
+    const qs = data.quick_sentiment;
+    const label = qs?.label || "NEUTRAL";
+
+    resultEl.innerHTML = `
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="kpi-card ${label === 'POSITIVE' ? 'green' : label === 'NEGATIVE' ? '' : 'blue'}">
+          <div class="kpi-label">Overall Sentiment</div>
+          <div class="kpi-value"><span class="sentiment-badge ${label}">${label}</span></div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Polarity Score</div>
+          <div class="kpi-value">${qs?.score?.toFixed(3) || "—"}</div>
+          <div class="kpi-change flat">-1.0 to +1.0</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-label">Subjectivity</div>
+          <div class="kpi-value">${qs?.subjectivity?.toFixed(3) || "—"}</div>
+          <div class="kpi-change flat">0=objective, 1=subjective</div>
+        </div>
+      </div>
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="granite-badge">IBM Granite Deep Sentiment Analysis</div>
+        </div>
+        <div class="ai-content">${marked.parse ? marked.parse(data.granite_analysis.analysis) : data.granite_analysis.analysis.replace(/\n/g,"<br>")}</div>
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Sentiment analysis failed: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEWS
+═══════════════════════════════════════════════════════════ */
+async function fetchNews() {
+  const keyword = document.getElementById("newsKeyword")?.value.trim() || "";
+  const topic = document.getElementById("newsTopic")?.value || "technology";
+  const resultEl = document.getElementById("newsResult");
+  if (!resultEl) return;
+
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Fetching news...</div>`;
+
+  try {
+    const params = keyword
+      ? `keyword=${encodeURIComponent(keyword)}&max_items=12`
+      : `topic=${encodeURIComponent(topic)}&max_items=12`;
+    const r = await fetch(`${API_BASE}/news?${params}`);
+    const data = await r.json();
+
+    if (!data.news || !data.news.length) {
+      resultEl.innerHTML = `<div class="empty-state"><div class="empty-icon">📰</div><p>No news found</p></div>`;
+      return;
+    }
+
+    resultEl.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📰 ${data.count} Articles Found</div>
+          <span style="font-size:11px;color:var(--muted)">Topic: ${data.topic}</span>
+        </div>
+        ${data.news.map(n => newsItemHTML(n)).join("")}
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Failed to fetch news: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MULTIMODAL
+═══════════════════════════════════════════════════════════ */
+async function runMultimodal() {
+  const query = document.getElementById("multimodalText").value.trim();
+  const type = document.getElementById("multimodalType").value;
+  if (!query) { alert("Please enter a query."); return; }
+
+  const resultEl = document.getElementById("multimodalResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Running ${type} analysis...</div>`;
+
+  try {
+    const formData = new FormData();
+    formData.append("query", query);
+    formData.append("type", type);
+
+    const r = await fetch(`${API_BASE}/multimodal`, { method: "POST", body: formData });
+    const data = await r.json();
+
+    const content = data.result?.analysis || data.granite_analysis?.analysis || "No analysis generated.";
+    resultEl.innerHTML = `
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="granite-badge">IBM Granite — ${type === 'sentiment' ? 'Sentiment' : 'Market'} Analysis</div>
+        </div>
+        <div class="ai-content">${marked.parse ? marked.parse(content) : content.replace(/\n/g,"<br>")}</div>
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Analysis failed: ${e.message}</div>`;
+  }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fileContent = e.target.result;
+    document.getElementById("fileName").textContent = `📄 ${file.name}`;
+    document.getElementById("filePreview").style.display = "block";
+    document.getElementById("uploadArea").style.display = "none";
+  };
+  reader.readAsText(file);
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  document.getElementById("uploadArea").classList.remove("drag-over");
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById("fileInput");
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  handleFileSelect({ target: { files: [file] } });
+}
+
+function clearFile() {
+  fileContent = "";
+  document.getElementById("fileInput").value = "";
+  document.getElementById("filePreview").style.display = "none";
+  document.getElementById("uploadArea").style.display = "block";
+  document.getElementById("multimodalResult").innerHTML = "";
+}
+
+async function runFileAnalysis() {
+  const query = document.getElementById("fileQuery").value.trim() ||
+    "Analyze this market data and provide key insights, trends, and recommendations.";
+
+  const resultEl = document.getElementById("multimodalResult");
+  resultEl.innerHTML = `<div class="loading"><div class="spinner"></div>Analyzing file with IBM Granite...</div>`;
+
+  try {
+    const formData = new FormData();
+    formData.append("query", query);
+    formData.append("type", "general");
+
+    const blob = new Blob([fileContent], { type: "text/plain" });
+    formData.append("file", blob, "uploaded_data.txt");
+
+    const r = await fetch(`${API_BASE}/multimodal`, { method: "POST", body: formData });
+    const data = await r.json();
+
+    const content = data.result?.analysis || "No analysis generated.";
+    resultEl.innerHTML = `
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="granite-badge">IBM Granite File Analysis</div>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">File content analyzed</span>
+        </div>
+        <div class="ai-content">${marked.parse ? marked.parse(content) : content.replace(/\n/g,"<br>")}</div>
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ File analysis failed: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ALERTS
+═══════════════════════════════════════════════════════════ */
+async function loadAlerts() {
+  const resultEl = document.getElementById("alertsResult");
+
+  try {
+    const r = await fetch(`${API_BASE}/dashboard?topic=${currentTopic}`);
+    const data = await r.json();
+    const alerts = data.alerts || [];
+
+    if (!alerts.length) {
+      resultEl.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><p>No active alerts for ${currentTopic}</p></div>`;
+      return;
+    }
+
+    const grouped = {
+      HIGH: alerts.filter(a => a.severity === "HIGH"),
+      MEDIUM: alerts.filter(a => a.severity === "MEDIUM"),
+      LOW: alerts.filter(a => a.severity === "LOW")
+    };
+
+    resultEl.innerHTML = Object.entries(grouped).map(([sev, items]) =>
+      items.length ? `
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">
+              ${sev === "HIGH" ? "🔴" : sev === "MEDIUM" ? "🟡" : "🟢"} ${sev} Priority Alerts
+              <span class="badge" style="background:${sev === 'HIGH' ? 'var(--red)' : sev === 'MEDIUM' ? 'var(--yellow)' : 'var(--green)'}">${items.length}</span>
+            </div>
+          </div>
+          <div class="card-body">
+            ${items.map(a => alertHTML(a)).join("")}
+          </div>
+        </div>` : ""
+    ).join("");
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);padding:16px;">⚠️ Failed to load alerts: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TEMPLATE HELPERS
+═══════════════════════════════════════════════════════════ */
+function alertHTML(alert) {
+  return `
+    <div class="alert-item ${alert.severity || 'LOW'}">
+      <div>
+        <span class="alert-severity">${alert.severity || 'INFO'}</span>
+        <div class="alert-date" style="margin-top:4px">${alert.date || ''}</div>
+      </div>
+      <div class="alert-content">
+        <div class="alert-message">${alert.message}</div>
+        ${alert.action ? `<div class="alert-action">💡 ${alert.action}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function newsItemHTML(item) {
+  const sentiment = item.sentiment || {};
+  return `
+    <div class="news-item">
+      <div class="news-content">
+        <div class="news-title">
+          ${item.link && item.link !== "#"
+            ? `<a href="${item.link}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${item.title}</a>`
+            : item.title}
+        </div>
+        <div class="news-meta">
+          <span class="news-source">${item.source || 'Unknown'}</span>
+          <span>${item.published || ''}</span>
+          ${sentiment.label
+            ? `<span class="sentiment-badge ${sentiment.label}">${sentiment.label}</span>`
+            : ""}
+        </div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
